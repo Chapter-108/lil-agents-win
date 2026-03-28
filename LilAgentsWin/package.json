@@ -27,6 +27,7 @@
     "productName": "Lil Agents Win",
     "directories": { "output": "dist" },
     "win": {
+      "icon": "../LilAgents/Assets.xcassets/AppIcon.appiconset/icon_512x512.png",
       "target": ["portable"],
       "signAndEditExecutable": false
     }

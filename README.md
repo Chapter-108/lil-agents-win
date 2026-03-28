@@ -15,36 +15,6 @@
 4. 启动应用：
    - `pnpm start`
 
-## 打包
-
-在 `LilAgentsWin` 目录执行：
-- `pnpm run pack`
-
-产物输出到：
-- `LilAgentsWin/dist`
-
-## 上传 GitHub（完整步骤）
-
-在项目根目录执行：
-
-1. 初始化仓库：
-   - `git init`
-2. 关联远程仓库：
-   - `git branch -M main`
-   - `git remote add origin https://github.com/Chapter-108/<repo-name>.git`
-3. 提交并推送：
-   - `git add .`
-   - `git commit -m "chore: initial upload"`
-   - `git push -u origin main`
-
-## 上传前检查（建议）
-
-- 确认未提交 `node_modules`、`dist`、`.env`、密钥文件
-- 确认可正常安装与启动（`pnpm install` + `pnpm start`）
-- 建议首次先私有仓库，确认后再公开
-- 如需自定义托盘“检查更新”跳转地址，可在启动前设置环境变量：
-  - `LIL_AGENTS_WIN_RELEASES_URL=https://github.com/Chapter-108/lil-agents-win/releases`
-
 ## 尊重原创
 
 本项目尊重原创与开源协议。  
