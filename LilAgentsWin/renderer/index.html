@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+  <title>Lil Agents</title>
+  <link rel="stylesheet" href="pet.css" />
+</head>
+<body>
+  <div id="stage">
+    <div class="pet" id="pet-bruce" data-id="bruce" aria-label="Bruce">
+      <div class="body bruce-body fallback" id="bruce-body">
+        <video class="body-video" id="bruce-video" muted playsinline></video>
+      </div>
+      <div class="face">◔‿◔</div>
+      <div class="bubble" hidden></div>
+    </div>
+    <div class="pet" id="pet-jazz" data-id="jazz" aria-label="Jazz">
+      <div class="body jazz-body fallback" id="jazz-body">
+        <video class="body-video" id="jazz-video" muted playsinline></video>
+      </div>
+      <div class="face">◕‿◕</div>
+      <div class="bubble" hidden></div>
+    </div>
+  </div>
+  <script src="pet.js"></script>
+</body>
+</html>

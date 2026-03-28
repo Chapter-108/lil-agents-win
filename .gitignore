@@ -1,0 +1,53 @@
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/swiftpm/
+xcuserdata/
+
+# SPM
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Archives
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Sparkle
+*.dmg
+*.zip
+*.xcworkspace/xcshareddata/swiftpm/
+
+# Windows Electron (LilAgentsWin)
+LilAgentsWin/node_modules/
+LilAgentsWin/dist/
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+
+# Editor and OS
+.vscode/
+.idea/
+Thumbs.db
+
+# Local backup copies
+lil-agents-1.0/

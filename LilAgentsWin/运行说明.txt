@@ -1,0 +1,101 @@
+Lil Agents — Windows 桌宠版
+============================
+
+原 macOS 工程（Swift + Xcode）无法在 Windows 上直接运行。本目录为独立的 Electron 客户端，在任务栏上方显示 Bruce / Jazz，并提供投喂、接物小游戏与打开终端的 AI 入口。
+
+一、推荐：一键脚本（全局 npm 损坏时也可用）
+------------------------------------------
+1）若从未装过 pnpm，在 PowerShell 执行一次（无需管理员）：
+
+   Invoke-WebRequest -Uri "https://get.pnpm.io/install.ps1" -UseBasicParsing | Invoke-Expression
+
+2）关闭并重新打开终端（让 PATH 生效），进入本文件夹，执行：
+
+   .\安装并启动.ps1
+
+脚本会：pnpm install → 下载 Electron 二进制 → 启动应用。
+
+二、手动命令（pnpm 已能用时）
+----------------------------
+  cd 本目录
+  $env:Path = "$env:LOCALAPPDATA\pnpm;$env:Path"   （若新开终端找不到 pnpm，加这一行）
+  pnpm install
+  pnpm run postinstall          （若启动报找不到 electron，再执行一次）
+  pnpm exec electron .
+
+日常启动只需：
+
+  pnpm exec electron .
+
+三、为什么不要用 npm？
+---------------------
+若出现 walk-up-path 找不到等错误，说明「Program Files 里的 npm」已损坏。请改用上面的 pnpm，或从 https://nodejs.org 重装 Node.js（安装时勾选修复 npm）。
+
+四、可选：管理员 + Corepack（备选）
+----------------------------------
+以管理员打开 PowerShell，执行 corepack enable，再 corepack prepare pnpm@latest --activate。
+若提示 EPERM，说明无写 Program Files 权限，请仍用「一」中的用户级 pnpm。
+
+五、打包便携版
+--------------
+  pnpm run pack
+
+产出在 dist 目录。
+
+六、使用说明
+------------
+- 系统托盘：投喂、小游戏、AI 助手窗口、显示/隐藏、音效、退出。
+- 点击角色：快速投喂。
+- 透明区域可穿透鼠标；状态保存在 Electron userData（见应用数据目录）。
+
+七、与 macOS 版的差异
+--------------------
+- 角色为 CSS 形象；AI 仍依赖本机 claude / codex / copilot 等 CLI。
+
+八、GPU process exited / Goodbye（已默认处理）
+---------------------------------------------
+若曾出现 GPU process isn't usable、exit_code=-1073741515，多为显卡驱动或系统缺少 GPU 相关 DLL。
+本应用在 Windows 上默认已关闭硬件加速，一般可直接启动。
+
+若你确认驱动正常、希望改用 GPU 渲染，在 PowerShell 中：
+
+  $env:LIL_AGENTS_WIN_ENABLE_GPU="1"
+  pnpm exec electron .
+
+九、下载 Electron 超时（ETIMEDOUT / GitHub）
+-------------------------------------------
+可先设置镜像再执行 pnpm run postinstall，例如（当前会话有效）：
+
+  $env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
+  pnpm run postinstall
+
+或重试几次；网络恢复后官方地址也可成功。
+
+十、把透明走路视频转成可在 Windows 渲染的 WebM（解决“两个蛋”）
+---------------------------------------------------------
+你现在看到的“两个蛋”本质原因是：Chromium/Electron 无法解码你提供的透明 `.mov`（触发 `<video>` 的 error），于是一直显示 fallback 占位。
+
+请安装 FFmpeg 后，把视频转换为 WebM(VP9)+Alpha：
+
+1）安装 FFmpeg（任选其一）
+   - winget install Gyan.FFmpeg
+   - 或手动安装后把 `ffmpeg.exe` 加到 PATH
+
+2）在 PowerShell 中运行：
+   .\convert-walk-to-webm.ps1
+
+   若边缘仍有锯齿，可用更高质量参数重转：
+   .\convert-walk-to-webm.ps1 -Force -ScalePercent 140 -Crf 16
+
+   若不希望放大，仅高质量重编码：
+   .\convert-walk-to-webm.ps1 -Force -NoUpscale -Crf 16
+
+   winget 安装的 FFmpeg 通常不在 PATH 里；脚本会自动在
+   %LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg_*\...\bin\ffmpeg.exe 下查找。
+   若仍失败，可手动指定：
+   .\convert-walk-to-webm.ps1 -FfmpegPath "完整路径\ffmpeg.exe"
+
+转换输出到：`LilAgentsWin/renderer/assets/walk-bruce-01.webm` 与 `walk-jazz-01.webm`
+
+然后重启应用：
+   pnpm exec electron .

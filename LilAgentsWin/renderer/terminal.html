@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+  <title>lil agents</title>
+  <style>
+    :root {
+      --popover-bg: #fff7eb;
+      --popover-border: #f28cab;
+      --title-bg: #faede0;
+      --title-text: #d85a73;
+      --separator: rgba(242, 140, 171, 0.25);
+      --text-primary: #33313a;
+      --text-dim: #7f7785;
+      --accent: #d85a73;
+      --error: #cc4333;
+      --success: #2fa56f;
+      --input-bg: #fffaf3;
+      --input-border: rgba(216, 90, 115, 0.25);
+      --radius: 24px;
+      --title: "claude ~";
+      --font: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+      --mono: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    body[data-theme="Midnight"] {
+      --popover-bg: rgba(18, 18, 18, 0.96);
+      --popover-border: rgba(255, 102, 0, 0.7);
+      --title-bg: #1f1f1f;
+      --title-text: #ff7f2a;
+      --separator: rgba(255, 127, 42, 0.3);
+      --text-primary: #f5f5f5;
+      --text-dim: #9b9b9b;
+      --accent: #ff7f2a;
+      --error: #ff6f61;
+      --success: #69b26b;
+      --input-bg: #222;
+      --input-border: rgba(255, 127, 42, 0.35);
+      --radius: 12px;
+      --title: "CLAUDE";
+      --font: var(--mono);
+    }
+
+    body[data-theme="Cloud"] {
+      --popover-bg: #f1f2f5;
+      --popover-border: rgba(122, 134, 156, 0.6);
+      --title-bg: #e5e7ed;
+      --title-text: #5f6570;
+      --separator: rgba(122, 134, 156, 0.35);
+      --text-primary: #252835;
+      --text-dim: #707683;
+      --accent: #1379d6;
+      --error: #c64b3d;
+      --success: #338d47;
+      --input-bg: #ffffff;
+      --input-border: rgba(19, 121, 214, 0.2);
+      --radius: 16px;
+      --title: "claude ~";
+    }
+
+    body[data-theme="Moss"] {
+      --popover-bg: #d1d5c7;
+      --popover-border: rgba(111, 117, 97, 0.8);
+      --title-bg: #b9bead;
+      --title-text: #3a4130;
+      --separator: rgba(111, 117, 97, 0.5);
+      --text-primary: #252a20;
+      --text-dim: #596052;
+      --accent: #444b38;
+      --error: #8f3c31;
+      --success: #2f6a32;
+      --input-bg: #e2e6d8;
+      --input-border: rgba(68, 75, 56, 0.3);
+      --radius: 10px;
+      --title: "Claude";
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: var(--font);
+      color: var(--text-primary);
+      background: transparent;
+      overflow: hidden;
+    }
+
+    .shell {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--popover-border);
+      background: var(--popover-bg);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title {
+      height: 28px;
+      border-bottom: 1px solid var(--separator);
+      background: var(--title-bg);
+      color: var(--title-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    .title .label {
+      text-transform: none;
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+
+    #provider-select {
+      height: 20px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 11px;
+      padding: 0 6px;
+      outline: none;
+      -webkit-app-region: no-drag;
+    }
+
+    .title .close-btn {
+      border: none;
+      background: transparent;
+      color: inherit;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 16px;
+      padding: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    .title .close-btn:hover {
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    #output {
+      flex: 1;
+      overflow: auto;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #output::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #output::-webkit-scrollbar-thumb {
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+
+    #output::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #auth-hint {
+      display: none;
+      margin: 8px 10px 0 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    #auth-hint.show {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    #auth-login-btn {
+      border: none;
+      border-radius: 8px;
+      height: 24px;
+      padding: 0 8px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 12px;
+      flex: 0 0 auto;
+    }
+
+    #auth-terminal-btn {
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      height: 24px;
+      padding: 0 8px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 12px;
+      flex: 0 0 auto;
+    }
+
+    .line {
+      margin: 7px 0;
+      border-radius: 9px;
+      padding: 4px 7px;
+    }
+
+    .user {
+      color: var(--text-primary);
+      font-weight: 600;
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
+
+    .assistant {
+      color: var(--text-primary);
+      background: color-mix(in srgb, #ffffff 55%, transparent);
+    }
+
+    .tool {
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 12px;
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+    }
+
+    .done {
+      color: var(--success);
+      font-family: var(--mono);
+      font-size: 12px;
+      background: color-mix(in srgb, var(--success) 10%, transparent);
+    }
+
+    .error {
+      color: var(--error);
+      background: color-mix(in srgb, var(--error) 12%, transparent);
+    }
+
+    form {
+      height: 40px;
+      padding: 6px 10px;
+      border-top: 1px solid var(--separator);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--popover-bg);
+    }
+
+    #input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      outline: none;
+      border-radius: 10px;
+      height: 28px;
+      padding: 0 10px;
+      font-size: 13px;
+      font-family: var(--font);
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    #input:focus {
+      border-color: color-mix(in srgb, var(--accent) 62%, #ffffff);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+
+    #input::placeholder {
+      color: var(--text-dim);
+    }
+
+    #send {
+      border: none;
+      border-radius: 10px;
+      height: 28px;
+      padding: 0 10px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 12px;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+
+    #send:hover:not(:disabled) {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+
+    #send:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  </style>
+</head>
+<body data-theme="Peach">
+  <div class="shell">
+    <div class="title">
+      <div class="title-left">
+        <div class="label" id="title-label">claude ~</div>
+        <select id="provider-select" title="Provider">
+          <option value="claude">Claude</option>
+          <option value="codex">Codex</option>
+          <option value="copilot">Copilot</option>
+        </select>
+      </div>
+      <button id="close-btn" class="close-btn" title="Close">×</button>
+    </div>
+    <div id="auth-hint">
+      <span id="auth-msg">Claude 尚未登录，请先执行 <code>/login</code></span>
+      <div style="display:flex;gap:6px;">
+        <button id="auth-terminal-btn" type="button">打开终端登录</button>
+        <button id="auth-login-btn" type="button">一键 /login</button>
+      </div>
+    </div>
+    <div id="output"></div>
+    <form id="chat-form">
+      <input id="input" placeholder="Ask Claude..." autocomplete="off" />
+      <button id="send" type="submit">Send</button>
+    </form>
+  </div>
+
+  <script src="./terminal.js"></script>
+</body>
+</html>

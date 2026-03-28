@@ -1,0 +1,181 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bubble-bg: rgba(255, 248, 240, 0.95);
+  --bubble-border: rgba(0, 0, 0, 0.08);
+  --bubble-text: #333;
+  --pet-shadow: 0 10px 16px rgba(0, 0, 0, 0.22);
+}
+
+body[data-theme="Midnight"] {
+  --bubble-bg: rgba(20, 20, 20, 0.92);
+  --bubble-border: rgba(255, 120, 40, 0.55);
+  --bubble-text: #c3c3c3;
+}
+
+body[data-theme="Cloud"] {
+  --bubble-bg: rgba(240, 243, 247, 0.95);
+  --bubble-border: rgba(19, 121, 214, 0.35);
+  --bubble-text: #6f7680;
+}
+
+body[data-theme="Moss"] {
+  --bubble-bg: rgba(209, 214, 198, 0.95);
+  --bubble-border: rgba(97, 104, 87, 0.65);
+  --bubble-text: #555a50;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.pet {
+  position: absolute;
+  bottom: 6px;
+  width: 112px;
+  height: 200px;
+  transform: translateX(-50%) scaleX(var(--dir, 1));
+  transform-origin: center bottom;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+  will-change: left, transform, filter;
+  backface-visibility: hidden;
+  contain: layout paint;
+}
+
+.pet:hover {
+  filter: brightness(1.08);
+}
+
+.body {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 92px;
+  height: 152px;
+  border-radius: 44% 44% 36% 36% / 52% 52% 30% 30%;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+
+.bruce-body {
+  background: transparent;
+}
+
+.jazz-body {
+  background: transparent;
+}
+
+.fallback.bruce-body {
+  background:
+    radial-gradient(56% 40% at 50% 24%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(70% 48% at 52% 72%, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0) 74%),
+    linear-gradient(165deg, #78ddb1 0%, #4dbf91 45%, #2f8b67 100%);
+  border: 1px solid rgba(25, 88, 66, 0.45);
+}
+
+.fallback.jazz-body {
+  background:
+    radial-gradient(56% 40% at 50% 24%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(70% 48% at 52% 72%, rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0) 74%),
+    linear-gradient(165deg, #ffae66 0%, #f67b2f 44%, #ce4f14 100%);
+  border: 1px solid rgba(126, 53, 18, 0.48);
+}
+
+.body-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: contain;
+  background: transparent;
+  display: block;
+  image-rendering: auto;
+  transform: translateZ(0.001px);
+  backface-visibility: hidden;
+}
+
+.face {
+  position: absolute;
+  left: 50%;
+  bottom: 74px;
+  transform: translateX(-50%);
+  font-size: 19px;
+  letter-spacing: -1px;
+  user-select: none;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+.pet.walking .body {
+  animation: bob 0.45s ease-in-out infinite alternate;
+}
+
+/* 视频加载成功后：用影片里的人物，不再用表情 + bob */
+.pet.has-video .face {
+  display: none;
+}
+
+.pet.has-video.walking .body {
+  animation: none;
+}
+
+.pet.has-video .body {
+  width: 112px;
+  height: 200px;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.pet.has-video .body-video {
+  border-radius: 0;
+  object-fit: contain;
+  filter: drop-shadow(var(--pet-shadow)) saturate(1.02) contrast(1.03);
+}
+
+@keyframes bob {
+  from { transform: translateX(-50%) translateY(0); }
+  to { transform: translateX(-50%) translateY(-5px); }
+}
+
+.bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  background: var(--bubble-bg);
+  border: 1px solid var(--bubble-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  color: var(--bubble-text);
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+}
+
+.bubble[hidden] {
+  display: none !important;
+}

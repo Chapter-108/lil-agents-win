@@ -1,0 +1,34 @@
+{
+  "name": "lil-agents-win",
+  "version": "1.0.0",
+  "description": "Windows 桌宠：行走与 AI 终端助手（Claude/Codex/Copilot）",
+  "author": "Chapter-108",
+  "license": "MIT",
+  "homepage": "https://github.com/Chapter-108/lil-agents-win",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Chapter-108/lil-agents-win.git"
+  },
+  "main": "main.js",
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "postinstall": "node ./node_modules/electron/install.js",
+    "pack": "electron-builder --win portable",
+    "pack:dir": "electron-builder --win dir",
+    "clean": "powershell -NoProfile -Command \"if (Test-Path dist) { Remove-Item -Recurse -Force dist }\""
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "xyz.lilagents.win",
+    "productName": "Lil Agents Win",
+    "directories": { "output": "dist" },
+    "win": {
+      "target": ["portable"],
+      "signAndEditExecutable": false
+    }
+  }
+}
