@@ -51,6 +51,12 @@ const PROVIDERS = {
     displayName: 'Copilot',
     inputPlaceholder: 'Ask Copilot...',
     installMessage: 'Copilot CLI not found. Install with: npm i -g @github/copilot'
+  },
+  gemini: {
+    id: 'gemini',
+    displayName: 'Gemini',
+    inputPlaceholder: 'Ask Gemini...',
+    installMessage: 'Gemini CLI not found. Install with: npm i -g @google/gemini-cli'
   }
 };
 

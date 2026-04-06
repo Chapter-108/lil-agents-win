@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage, screen, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, screen, ipcMain, shell, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -393,7 +393,6 @@ class GenericExecSession {
     this.providerId = providerId;
     this.characterId = characterId;
     this.process = null;
-    this.isRunning = false;
     this.isBusy = false;
     this.history = [];
     this.onEvent = null;
@@ -406,6 +405,10 @@ class GenericExecSession {
 
   buildEnvironment() {
     return buildCliEnvironment();
+  }
+
+  refreshBinary() {
+    this.binaryPath = null;
   }
 
   resolveBinary() {
@@ -433,15 +436,13 @@ class GenericExecSession {
   }
 
   startIfNeeded() {
-    if (this.isRunning) return true;
     const binary = this.resolveBinary();
     if (!binary) {
-      const msg = PROVIDERS[this.providerId].installMessage;
+      const msg = PROVIDERS[this.providerId]?.installMessage || `${this.providerId} CLI not found.`;
       this.history.push({ role: 'error', text: msg });
       this.emit('error', { text: msg });
       return false;
     }
-    this.isRunning = true;
     return true;
   }
 
@@ -461,6 +462,9 @@ class GenericExecSession {
     if (this.providerId === 'codex') {
       return ['exec', '--json', '--full-auto', '--skip-git-repo-check', prompt];
     }
+    if (this.providerId === 'gemini') {
+      return ['-p', prompt];
+    }
     // Copilot CLI output format varies by version; JSON first, then fallback plain.
     return ['-p', prompt, '--output-format', 'json', '--allow-all'];
   }
@@ -479,6 +483,10 @@ class GenericExecSession {
         if (this.providerId === 'codex') {
           if (t === 'item.completed' && json.item && json.item.type === 'agent_message' && typeof json.item.text === 'string') {
             out += (out ? '\n' : '') + json.item.text;
+          }
+        } else if (this.providerId === 'gemini') {
+          if (t === 'content' && typeof json.text === 'string') {
+            out += (out ? '\n' : '') + json.text;
           }
         } else {
           const data = json.data || {};
@@ -623,22 +631,17 @@ class GenericExecSession {
     if (this.process) this.process.kill();
     this.process = null;
     this.isBusy = false;
-    this.isRunning = false;
   }
 }
 
-const sessionStore = {
-  claude: {},
-  codex: {},
-  copilot: {}
-};
+const sessionStore = {};
 
 function normalizeCharacterId(id) {
   return id === 'jazz' ? 'jazz' : 'bruce';
 }
 
 function normalizeProviderId(id) {
-  return id === 'codex' || id === 'copilot' ? id : 'claude';
+  return Object.keys(PROVIDERS).includes(id) ? id : 'claude';
 }
 
 function currentProviderId() {
@@ -648,6 +651,7 @@ function currentProviderId() {
 function getOrCreateSession(providerId, characterId) {
   const p = normalizeProviderId(providerId);
   const c = normalizeCharacterId(characterId);
+  if (!sessionStore[p]) sessionStore[p] = {};
   if (sessionStore[p][c]) return sessionStore[p][c];
   const session = p === 'claude' ? new ClaudeSession(c) : new GenericExecSession(p, c);
   wireSessionBridge(session, p, c);
@@ -773,6 +777,7 @@ function createChatWindow(anchor = null) {
     }
   });
 
+  chatWin.setAlwaysOnTop(true, 'floating');
   chatWin.loadFile(path.join(__dirname, 'renderer', 'terminal.html'));
   chatReady = false;
   chatQueue = [];
@@ -786,8 +791,9 @@ function createChatWindow(anchor = null) {
   });
 
   if (anchor) {
-    const x = Math.round(anchor.screenX - 210);
-    const y = Math.round(anchor.screenY - 290);
+    const workArea = getSelectedDisplay().workArea;
+    const x = Math.max(workArea.x, Math.min(Math.round(anchor.screenX - 210), workArea.x + workArea.width - 420));
+    const y = Math.max(workArea.y + 40, Math.min(Math.round(anchor.screenY - 290), workArea.y + workArea.height - 310));
     chatWin.setPosition(x, y);
   } else {
     const target = getSelectedDisplay();
@@ -994,6 +1000,7 @@ function openProviderLoginTerminal(providerId) {
   let cmd = 'claude';
   if (providerId === 'codex') cmd = 'codex login --device-auth';
   if (providerId === 'copilot') cmd = 'copilot login';
+  if (providerId === 'gemini') cmd = 'gemini auth';
   const shellCmd = `cd /d "${cwd}" && ${cmd}`;
   try {
     const wt = spawn('wt.exe', ['cmd', '/k', shellCmd], { detached: true, stdio: 'ignore' });
@@ -1036,6 +1043,16 @@ function wireSessionBridge(session, providerId, characterId) {
       }
     }
     if (event === 'turn-complete') {
+      if (Notification.isSupported()) {
+        const isFocused = chatWin && !chatWin.isDestroyed() && chatWin.isFocused();
+        if (!isFocused) {
+          new Notification({
+            title: 'lil agents',
+            body: `${PROVIDERS[providerId].displayName} 回复完成`,
+            silent: true
+          }).show();
+        }
+      }
       sendPet('hide-thinking', { id: characterId });
       const phrase = COMPLETION_PHRASES[Math.floor(Math.random() * COMPLETION_PHRASES.length)];
       if (activeChatCharacterId !== characterId) {
@@ -1066,10 +1083,39 @@ function setupSessionBridges() {
   }
 }
 
+function updateJumpList() {
+  try {
+    app.setUserTasks(
+      Object.values(PROVIDERS).map((p) => ({
+        program: process.execPath,
+        arguments: `--switch-provider=${p.id}`,
+        title: `切换到 ${p.displayName}`,
+        description: `使用 ${p.displayName} 作为 AI 提供商`,
+        iconPath: process.execPath,
+        iconIndex: 0
+      }))
+    );
+  } catch (err) {
+    console.error('JumpList update failed:', err);
+  }
+}
+
 app.whenReady().then(() => {
+  // Handle --switch-provider command line argument
+  const switchProviderArg = process.argv.find((a) => a.startsWith('--switch-provider='));
+  if (switchProviderArg) {
+    const providerId = normalizeProviderId(switchProviderArg.split('=')[1]);
+    const state = loadState();
+    if (state.selectedProvider !== providerId) {
+      state.selectedProvider = providerId;
+      saveState(state);
+    }
+  }
+
   setupSessionBridges();
   createPetWindow();
   createTray();
+  updateJumpList();
 
   screen.on('display-metrics-changed', () => {
     positionPetWindow();
@@ -1126,6 +1172,42 @@ app.whenReady().then(() => {
     if (!session) return false;
     const text = (payload?.message || '').trim();
     if (!text) return false;
+
+    if (text.startsWith('/')) {
+      const cmd = text.split(' ')[0].toLowerCase();
+
+      if (cmd === '/clear') {
+        session.history = [];
+        sendChat('history', { messages: [] });
+        return true;
+      }
+
+      if (cmd === '/copy') {
+        const last = session.history.slice().reverse().find((m) => m.role === 'assistant');
+        if (last) {
+          const { clipboard } = require('electron');
+          clipboard.writeText(last.text);
+          sendChat('assistant-chunk', { text: '\n✓ 已复制到剪贴板' });
+          sendChat('turn-complete', {});
+        }
+        return true;
+      }
+
+      if (cmd === '/help') {
+        const helpText =
+          '可用命令：\n' +
+          '  /clear  — 清空当前对话\n' +
+          '  /copy   — 复制最后一条回复\n' +
+          '  /help   — 显示此帮助\n' +
+          '  /login  — 触发 Claude 登录（仅 Claude）';
+        sendChat('assistant-chunk', { text: helpText });
+        sendChat('turn-complete', {});
+        return true;
+      }
+
+      // 其他斜杠命令（如 /login）直接透传给 CLI
+    }
+
     session.send(text);
     return true;
   });
@@ -1160,6 +1242,21 @@ app.whenReady().then(() => {
 
   ipcMain.handle('open-copilot-login-terminal', () => {
     return openProviderLoginTerminal('copilot');
+  });
+
+  ipcMain.handle('open-gemini-login-terminal', () => {
+    return openProviderLoginTerminal('gemini');
+  });
+
+  ipcMain.handle('copy-last-response', () => {
+    const session = currentSession();
+    const last = session?.history.slice().reverse().find((m) => m.role === 'assistant');
+    if (last) {
+      const { clipboard } = require('electron');
+      clipboard.writeText(last.text);
+      return true;
+    }
+    return false;
   });
 
   ipcMain.handle('check-for-updates', async () => {

@@ -141,7 +141,8 @@
       -webkit-app-region: no-drag;
     }
 
-    .title .close-btn {
+    .title .close-btn,
+    .title .copy-btn {
       border: none;
       background: transparent;
       color: inherit;
@@ -155,7 +156,8 @@
       -webkit-app-region: no-drag;
     }
 
-    .title .close-btn:hover {
+    .title .close-btn:hover,
+    .title .copy-btn:hover {
       background: rgba(0, 0, 0, 0.12);
     }
 
@@ -319,6 +321,42 @@
       opacity: 0.5;
       cursor: default;
     }
+
+    /* Markdown rendered content */
+    .assistant p { margin: 4px 0; }
+    .assistant h1, .assistant h2, .assistant h3,
+    .assistant h4, .assistant h5, .assistant h6 {
+      margin: 6px 0 2px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .assistant ul, .assistant ol {
+      margin: 4px 0;
+      padding-left: 18px;
+    }
+    .assistant li { margin: 2px 0; }
+    .assistant pre {
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      border-radius: 6px;
+      padding: 6px 8px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      margin: 4px 0;
+    }
+    .assistant code {
+      font-family: var(--mono);
+      font-size: 11px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-radius: 3px;
+      padding: 1px 3px;
+    }
+    .assistant pre code {
+      background: none;
+      padding: 0;
+    }
+    .assistant hr { border: none; border-top: 1px solid var(--separator); margin: 6px 0; }
+    .assistant br { display: block; margin: 2px 0; content: ""; }
   </style>
 </head>
 <body data-theme="Peach">
@@ -330,8 +368,10 @@
           <option value="claude">Claude</option>
           <option value="codex">Codex</option>
           <option value="copilot">Copilot</option>
+          <option value="gemini">Gemini</option>
         </select>
       </div>
+      <button id="copy-btn" class="copy-btn" title="复制最后回复">⎘</button>
       <button id="close-btn" class="close-btn" title="Close">×</button>
     </div>
     <div id="auth-hint">
@@ -348,6 +388,7 @@
     </form>
   </div>
 
+  <script src="./assets/marked.min.js"></script>
   <script src="./terminal.js"></script>
 </body>
 </html>

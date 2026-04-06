@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('lil', {
   openClaudeLoginTerminal: () => ipcRenderer.invoke('open-claude-login-terminal'),
   openCodexLoginTerminal: () => ipcRenderer.invoke('open-codex-login-terminal'),
   openCopilotLoginTerminal: () => ipcRenderer.invoke('open-copilot-login-terminal'),
+  openGeminiLoginTerminal: () => ipcRenderer.invoke('open-gemini-login-terminal'),
+  copyLastResponse: () => ipcRenderer.invoke('copy-last-response'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   // 返回仓库内资源的绝对 file:// URL，供 renderer 加载本地视频/音频。
   getAssetPath: (relPath) => ipcRenderer.invoke('asset-path', relPath)

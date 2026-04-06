@@ -3,6 +3,7 @@ const form = document.getElementById('chat-form');
 const input = document.getElementById('input');
 const send = document.getElementById('send');
 const closeBtn = document.getElementById('close-btn');
+const copyBtn = document.getElementById('copy-btn');
 const authHint = document.getElementById('auth-hint');
 const authLoginBtn = document.getElementById('auth-login-btn');
 const authTerminalBtn = document.getElementById('auth-terminal-btn');
@@ -12,6 +13,7 @@ const providerSelect = document.getElementById('provider-select');
 
 let isBusy = false;
 let assistantLineEl = null;
+let assistantRawText = '';
 let hasWelcome = false;
 let currentProvider = 'claude';
 
@@ -22,6 +24,7 @@ function scrollToBottom() {
 function clearOutput() {
   output.innerHTML = '';
   assistantLineEl = null;
+  assistantRawText = '';
 }
 
 function showAuthHint(show) {
@@ -46,6 +49,9 @@ function applyProvider(meta) {
   } else if (currentProvider === 'copilot') {
     setAuthMessage('Copilot CLI 未登录，请先在终端中执行 copilot login');
     authLoginBtn.textContent = '打开 Copilot 登录';
+  } else if (currentProvider === 'gemini') {
+    setAuthMessage('Gemini CLI 未登录，请先在终端中执行 gemini auth');
+    authLoginBtn.textContent = '打开 Gemini 登录';
   }
 }
 
@@ -66,14 +72,20 @@ function appendAssistantChunk(text) {
     assistantLineEl = document.createElement('div');
     assistantLineEl.className = 'line assistant';
     assistantLineEl.textContent = '';
+    assistantRawText = '';
     output.appendChild(assistantLineEl);
   }
-  assistantLineEl.textContent += text;
+  assistantRawText += text;
+  assistantLineEl.textContent = assistantRawText;
   scrollToBottom();
 }
 
 function endAssistantChunk() {
+  if (assistantLineEl && assistantRawText && typeof window.lilMarked !== 'undefined') {
+    assistantLineEl.innerHTML = window.lilMarked.parse(assistantRawText);
+  }
   assistantLineEl = null;
+  assistantRawText = '';
 }
 
 function setBusy(busy) {
@@ -84,6 +96,10 @@ function setBusy(busy) {
 
 closeBtn.addEventListener('click', () => {
   window.lil.closeChat();
+});
+
+copyBtn.addEventListener('click', async () => {
+  await window.lil.copyLastResponse();
 });
 
 window.addEventListener('keydown', (e) => {
@@ -105,7 +121,6 @@ form.addEventListener('submit', async (e) => {
 
 authLoginBtn.addEventListener('click', async () => {
   if (currentProvider === 'claude') {
-    await window.lil.openExternal('https://claude.ai/login');
     appendLine('> /login', 'user');
     endAssistantChunk();
     setBusy(true);
@@ -125,6 +140,14 @@ authLoginBtn.addEventListener('click', async () => {
       appendLine('无法自动打开 Copilot 终端，请手动运行 copilot login', 'error');
     } else {
       appendLine('已打开 Copilot 终端，请按提示完成登录。', 'assistant');
+      showAuthHint(true);
+    }
+  } else if (currentProvider === 'gemini') {
+    const ok = await window.lil.openGeminiLoginTerminal();
+    if (!ok) {
+      appendLine('无法自动打开 Gemini 终端，请手动运行 gemini auth', 'error');
+    } else {
+      appendLine('已打开 Gemini 终端，请按提示完成登录。', 'assistant');
       showAuthHint(true);
     }
   }
@@ -153,6 +176,14 @@ authTerminalBtn.addEventListener('click', async () => {
       appendLine('无法自动打开终端，请手动在系统终端运行 copilot login', 'error');
     } else {
       appendLine('已打开终端，请按提示完成 Copilot 登录。', 'assistant');
+      showAuthHint(true);
+    }
+  } else if (currentProvider === 'gemini') {
+    const ok = await window.lil.openGeminiLoginTerminal();
+    if (!ok) {
+      appendLine('无法自动打开终端，请手动在系统终端运行 gemini auth', 'error');
+    } else {
+      appendLine('已打开终端，请按提示完成 Gemini 登录。', 'assistant');
       showAuthHint(true);
     }
   }
@@ -212,6 +243,10 @@ window.lil.onChatEvent((event, payload) => {
     } else if (payload?.provider === 'copilot' || currentProvider === 'copilot') {
       setAuthMessage(payload?.message || 'Copilot CLI 未登录，请先在终端中执行 copilot login');
       authLoginBtn.textContent = '打开 Copilot 登录';
+      showAuthHint(true);
+    } else if (payload?.provider === 'gemini' || currentProvider === 'gemini') {
+      setAuthMessage(payload?.message || 'Gemini CLI 未登录，请先在终端中执行 gemini auth');
+      authLoginBtn.textContent = '打开 Gemini 登录';
       showAuthHint(true);
     } else if (currentProvider === 'claude') {
       setAuthMessage(payload?.message || 'Claude 尚未登录，请先执行 /login');
